@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Drum Machine</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header><h1>Drum Machine</h1><span>Tap pads to build a beat</span></header>
+  <main>
+    <div id="grid" style="display:grid;grid-template-columns:auto repeat(16,1fr);gap:4px;width:min(680px,100%)"></div>
+    <div class="row"><button class="primary" id="go">Play</button><label class="hint">BPM <input id="bpm" type="range" min="70" max="170" value="110" /></label></div>
+  </main>
+  <script type="module">
+    import { hue, rng } from './app.js';
+    const TRACKS = ['Kick', 'Snare', 'Hat', 'Clap'], r = rng();
+    const pattern = TRACKS.map((t, i) => Array.from({ length: 16 }, (_, s) => (i === 0 ? s % 4 === 0 : i === 1 ? s % 8 === 4 : i === 2 ? s % 2 === 0 : r() < 0.12)));
+    const grid = document.getElementById('grid'); const cells = [];
+    TRACKS.forEach((t, i) => {
+      const l = document.createElement('span'); l.textContent = t; l.className = 'hint'; l.style.alignSelf = 'center'; grid.appendChild(l); cells[i] = [];
+      for (let s = 0; s < 16; s++) { const b = document.createElement('button'); b.style.cssText = 'padding:0;aspect-ratio:1;border-radius:6px'; b.onclick = () => { pattern[i][s] = !pattern[i][s]; paint(); }; grid.appendChild(b); cells[i][s] = b; }
+    });
+    let step = -1, timer = null, ac;
+    function paint() { cells.forEach((row, i) => row.forEach((b, s) => (b.style.background = pattern[i][s] ? 'hsl(' + (hue + i * 30) + ' 80% 60%)' : s === step ? '#ffffff30' : ''))); }
+    function hit(i) {
+      const t = ac.currentTime, g = ac.createGain(); g.connect(ac.destination);
+      if (i === 0) { const o = ac.createOscillator(); o.frequency.setValueAtTime(150, t); o.frequency.exponentialRampToValueAtTime(40, t + 0.2); g.gain.setValueAtTime(0.9, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.3); o.connect(g); o.start(t); o.stop(t + 0.3); return; }
+      const len = i === 2 ? 0.05 : 0.18, buf = ac.createBuffer(1, ac.sampleRate * len, ac.sampleRate), d = buf.getChannelData(0);
+      for (let k = 0; k < d.length; k++) d[k] = Math.random() * 2 - 1;
+      const src = ac.createBufferSource(), f = ac.createBiquadFilter(); f.type = i === 2 ? 'highpass' : 'bandpass'; f.frequency.value = i === 2 ? 7000 : i === 1 ? 1800 : 1200;
+      g.gain.setValueAtTime(0.5, t); g.gain.exponentialRampToValueAtTime(0.001, t + len); src.buffer = buf; src.connect(f).connect(g); src.start(t);
+    }
+    function tick() { step = (step + 1) % 16; pattern.forEach((row, i) => row[step] && hit(i)); paint(); timer = setTimeout(tick, 60000 / +document.getElementById('bpm').value / 4); }
+    document.getElementById('go').onclick = (e) => { ac ||= new AudioContext(); if (timer) { clearTimeout(timer); timer = null; step = -1; paint(); e.target.textContent = 'Play'; } else { tick(); e.target.textContent = 'Stop'; } };
+    paint();
+  </script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Flow Field</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header><h1>Flow Field</h1><span>Move to stir, tap to reseed</span></header>
+  <main>
+    <canvas id="c"></canvas>
+  </main>
+  <script type="module">
+    import { fitCanvas, hue, rng } from './app.js';
+    const W = Math.min(720, innerWidth - 32), H = Math.min(520, innerHeight - 120), c = document.getElementById('c'), ctx = fitCanvas(c, W, H);
+    let r = rng(), z = r() * 100, mouse = [W / 2, H / 2];
+    const P = Array.from({ length: 900 }, () => ({ x: r() * W, y: r() * H }));
+    const field = (x, y) => Math.sin(x * 0.006 + z) * 2 + Math.cos(y * 0.007 - z) * 2 + Math.atan2(y - mouse[1], x - mouse[0]) * 0.3;
+    ctx.fillStyle = 'hsl(' + hue + ' 30% 6%)'; ctx.fillRect(0, 0, W, H);
+    function frame() {
+      ctx.fillStyle = 'hsla(' + hue + ', 30%, 6%, 0.06)'; ctx.fillRect(0, 0, W, H);
+      P.forEach((p, i) => {
+        const a = field(p.x, p.y), nx = p.x + Math.cos(a) * 1.6, ny = p.y + Math.sin(a) * 1.6;
+        ctx.strokeStyle = 'hsla(' + (hue + (i % 60)) + ', 85%, 65%, 0.6)'; ctx.beginPath(); ctx.moveTo(p.x, p.y); ctx.lineTo(nx, ny); ctx.stroke();
+        p.x = nx; p.y = ny; if (p.x < 0 || p.x > W || p.y < 0 || p.y > H) { p.x = Math.random() * W; p.y = Math.random() * H; }
+      });
+      z += 0.002; requestAnimationFrame(frame);
+    }
+    c.addEventListener('pointermove', (e) => { const b = c.getBoundingClientRect(); mouse = [e.clientX - b.left, e.clientY - b.top]; });
+    c.addEventListener('pointerdown', () => { z = Math.random() * 100; });
+    frame();
+  </script>
+</body>
+</html>

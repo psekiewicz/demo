@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Sketchpad</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header><h1>Sketchpad</h1><span>Draw with mouse or finger</span></header>
+  <main>
+    <canvas id="c"></canvas>
+    <div class="row" id="colors"></div>
+    <div class="row"><label class="hint">Size <input id="size" type="range" min="2" max="40" value="8" /></label><button id="clear">Clear</button><button id="save">Save PNG</button></div>
+  </main>
+  <script type="module">
+    import { fitCanvas, hue } from './app.js';
+    const W = Math.min(600, innerWidth - 32), H = Math.round(W * 0.75), c = document.getElementById('c'), ctx = fitCanvas(c, W, H);
+    let color = 'hsl(' + hue + ' 85% 62%)', drawing = false, last;
+    const fill = () => { ctx.fillStyle = '#fdfcf8'; ctx.fillRect(0, 0, W, H); }; fill();
+    [0, 40, 120, 200, 280, 330].map((d) => 'hsl(' + ((hue + d) % 360) + ' 80% 55%)').concat('#191713', '#fdfcf8').forEach((col) => {
+      const b = document.createElement('button'); b.style.cssText = 'width:34px;height:34px;padding:0;background:' + col; b.onclick = () => (color = col); document.getElementById('colors').appendChild(b);
+    });
+    const pos = (e) => { const b = c.getBoundingClientRect(); return [e.clientX - b.left, e.clientY - b.top]; };
+    c.addEventListener('pointerdown', (e) => { drawing = true; last = pos(e); c.setPointerCapture(e.pointerId); });
+    c.addEventListener('pointermove', (e) => { if (!drawing) return; const p = pos(e); ctx.strokeStyle = color; ctx.lineWidth = +document.getElementById('size').value; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(...last); ctx.lineTo(...p); ctx.stroke(); last = p; });
+    addEventListener('pointerup', () => (drawing = false));
+    document.getElementById('clear').onclick = fill;
+    document.getElementById('save').onclick = () => { const a = document.createElement('a'); a.download = 'sketch.png'; a.href = c.toDataURL(); a.click(); };
+  </script>
+</body>
+</html>

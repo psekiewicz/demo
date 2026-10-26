@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Breakout</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header><h1>Breakout</h1><span>Mouse or touch</span></header>
+  <main>
+    <canvas id="c"></canvas>
+    <div class="row"><button class="primary" id="go">Start</button><span id="score" class="hint">Score 0</span></div>
+  </main>
+  <script type="module">
+    import { fitCanvas, hue } from './app.js';
+    const W = Math.min(480, innerWidth - 32), H = W * 1.2, c = document.getElementById('c'), ctx = fitCanvas(c, W, H);
+    const COLS = 8, ROWS = 6, bw = W / COLS;
+    let bricks, ball, paddle = W / 2, raf = null, score;
+    function reset() { bricks = Array.from({ length: COLS * ROWS }, () => 1); ball = { x: W / 2, y: H - 60, vx: 3, vy: -4 }; score = 0; }
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      bricks.forEach((b, i) => { if (!b) return; ctx.fillStyle = 'hsl(' + (hue + Math.floor(i / COLS) * 18) + ' 80% 60%)'; ctx.fillRect((i % COLS) * bw + 3, Math.floor(i / COLS) * 22 + 40, bw - 6, 16); });
+      ctx.fillStyle = '#f5f3ee'; ctx.fillRect(paddle - 40, H - 24, 80, 10);
+      ctx.beginPath(); ctx.arc(ball.x, ball.y, 7, 0, 7); ctx.fill();
+    }
+    function frame() {
+      ball.x += ball.vx; ball.y += ball.vy;
+      if (ball.x < 7 || ball.x > W - 7) ball.vx *= -1;
+      if (ball.y < 7) ball.vy *= -1;
+      if (ball.y > H - 31 && ball.y < H - 20 && Math.abs(ball.x - paddle) < 46) { ball.vy = -Math.abs(ball.vy); ball.vx = (ball.x - paddle) / 8; }
+      const col = Math.floor(ball.x / bw), row = Math.floor((ball.y - 40) / 22);
+      if (row >= 0 && row < ROWS && col >= 0 && col < COLS && bricks[row * COLS + col]) { bricks[row * COLS + col] = 0; ball.vy *= -1; score++; document.getElementById('score').textContent = 'Score ' + score; }
+      draw();
+      if (ball.y > H + 10 || bricks.every((b) => !b)) { raf = null; document.getElementById('go').textContent = 'Again'; return; }
+      raf = requestAnimationFrame(frame);
+    }
+    c.addEventListener('pointermove', (e) => { paddle = e.clientX - c.getBoundingClientRect().left; if (!raf) draw(); });
+    document.getElementById('go').onclick = () => { reset(); if (!raf) raf = requestAnimationFrame(frame); };
+    reset(); draw();
+  </script>
+</body>
+</html>

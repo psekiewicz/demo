@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Life</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header><h1>Life</h1><span>Tap cells, then play</span></header>
+  <main>
+    <canvas id="c"></canvas>
+    <div class="row"><button class="primary" id="play">Play</button><button id="rand">Random</button><button id="clear">Clear</button><span id="gen" class="hint">Gen 0</span></div>
+  </main>
+  <script type="module">
+    import { fitCanvas, hue, rng } from './app.js';
+    const W = Math.min(480, innerWidth - 32), cols = 48, cell = W / cols, rows = Math.floor(cols * 0.75), H = rows * cell;
+    const c = document.getElementById('c'), ctx = fitCanvas(c, W, H);
+    let grid = new Uint8Array(cols * rows), timer = null, gen = 0;
+    const r = rng();
+    const random = () => { grid = grid.map(() => (r() < 0.28 ? 1 : 0)); gen = 0; draw(); };
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = 'hsl(' + hue + ' 85% 62%)';
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) if (grid[y * cols + x]) ctx.fillRect(x * cell + .5, y * cell + .5, cell - 1, cell - 1);
+      document.getElementById('gen').textContent = 'Gen ' + gen;
+    }
+    function step() {
+      const nextGrid = new Uint8Array(grid.length);
+      for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
+        let n = 0;
+        for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) if (dx || dy) n += grid[((y + dy + rows) % rows) * cols + ((x + dx + cols) % cols)];
+        const alive = grid[y * cols + x];
+        nextGrid[y * cols + x] = n === 3 || (alive && n === 2) ? 1 : 0;
+      }
+      grid = nextGrid; gen++; draw();
+    }
+    c.addEventListener('pointerdown', (e) => { const b = c.getBoundingClientRect(); const x = Math.floor((e.clientX - b.left) / cell), y = Math.floor((e.clientY - b.top) / cell); grid[y * cols + x] ^= 1; draw(); });
+    document.getElementById('play').onclick = (e) => { if (timer) { clearInterval(timer); timer = null; e.target.textContent = 'Play'; } else { timer = setInterval(step, 90); e.target.textContent = 'Pause'; } };
+    document.getElementById('rand').onclick = random;
+    document.getElementById('clear').onclick = () => { grid.fill(0); gen = 0; draw(); };
+    random();
+  </script>
+</body>
+</html>

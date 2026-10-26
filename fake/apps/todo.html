@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Todo</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header><h1>Todo</h1><span>Saved in this browser</span></header>
+  <main>
+    <form id="f" class="row" style="width:min(520px,100%)"><input id="in" placeholder="Add a task" style="flex:1;padding:12px 16px;border-radius:999px;border:1px solid #555;background:#0003" /><button class="primary">Add</button></form>
+    <ul id="list" style="list-style:none;padding:0;margin:0;width:min(520px,100%);display:grid;gap:8px"></ul>
+    <p class="hint" id="left"></p>
+  </main>
+  <script type="module">
+    import { seed } from './app.js';
+    const KEY = 'xoxd-toy-todo-' + seed;
+    let items; try { items = JSON.parse(localStorage.getItem(KEY)) || null; } catch { items = null; }
+    items ||= [{ t: 'Try this demo', d: true }, { t: 'Leave a comment on XOXD', d: false }, { t: 'Build something small', d: false }];
+    const save = () => { try { localStorage.setItem(KEY, JSON.stringify(items)); } catch {} };
+    function render() {
+      const list = document.getElementById('list'); list.innerHTML = '';
+      items.forEach((it, i) => {
+        const li = document.createElement('li');
+        li.style.cssText = 'display:flex;gap:10px;align-items:center;padding:12px 14px;border-radius:14px;background:#ffffff10';
+        li.innerHTML = '<input type=checkbox ' + (it.d ? 'checked' : '') + '><span style="flex:1;' + (it.d ? 'text-decoration:line-through;opacity:.6' : '') + '"></span><button aria-label=Delete style="padding:4px 10px">x</button>';
+        li.querySelector('span').textContent = it.t;
+        li.querySelector('input').onchange = () => { it.d = !it.d; save(); render(); };
+        li.querySelector('button').onclick = () => { items.splice(i, 1); save(); render(); };
+        list.appendChild(li);
+      });
+      document.getElementById('left').textContent = items.filter((x) => !x.d).length + ' left';
+    }
+    document.getElementById('f').onsubmit = (e) => { e.preventDefault(); const v = document.getElementById('in').value.trim(); if (v) { items.push({ t: v, d: false }); document.getElementById('in').value = ''; save(); render(); } };
+    render();
+  </script>
+</body>
+</html>

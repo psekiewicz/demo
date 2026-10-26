@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Palette</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header><h1>Palette</h1><span>Space or tap for new colors</span></header>
+  <main>
+    <div id="sw" style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;width:min(680px,100%);height:min(60vh,420px)"></div>
+    <div class="row"><button class="primary" id="gen">Generate</button><span class="hint">Tap a color to copy, long-press to lock</span></div>
+  </main>
+  <script type="module">
+    import { rng } from './app.js';
+    const r = rng(); const locked = [false, false, false, false, false]; let cols = [];
+    const hex = (h, s, l) => { s /= 100; l /= 100; const k = (n) => (n + h / 30) % 12, a = s * Math.min(l, 1 - l), f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1))); return '#' + [f(0), f(8), f(4)].map((x) => Math.round(x * 255).toString(16).padStart(2, '0')).join(''); };
+    function gen() {
+      const base = r() * 360, scheme = [0, 30, 60, 180, 210][Math.floor(r() * 5)];
+      cols = cols.length ? cols : Array(5).fill('');
+      cols = cols.map((c, i) => (locked[i] && c ? c : hex((base + (i % 2 ? scheme : 0) + i * 12) % 360, 55 + r() * 35, 30 + i * 11)));
+      const box = document.getElementById('sw'); box.innerHTML = '';
+      cols.forEach((c, i) => {
+        const d = document.createElement('button'); d.style.cssText = 'border-radius:16px;border:' + (locked[i] ? '3px solid #fff' : '0') + ';background:' + c + ';display:flex;align-items:flex-end;justify-content:center;padding:12px;color:' + (i > 2 ? '#111' : '#fff'); d.textContent = c;
+        let t; d.onpointerdown = () => (t = setTimeout(() => { locked[i] = !locked[i]; t = null; gen(); }, 500));
+        d.onpointerup = () => { if (t) { clearTimeout(t); navigator.clipboard?.writeText(c).catch(() => {}); d.textContent = 'Copied'; setTimeout(() => (d.textContent = c), 800); } };
+        box.appendChild(d);
+      });
+    }
+    document.getElementById('gen').onclick = gen; addEventListener('keydown', (e) => e.code === 'Space' && (e.preventDefault(), gen()));
+    gen();
+  </script>
+</body>
+</html>

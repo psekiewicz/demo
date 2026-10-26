@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Snake</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header><h1>Snake</h1><span>Arrows or swipe</span></header>
+  <main>
+    <canvas id="c"></canvas>
+    <div class="row"><button class="primary" id="go">Start</button><span id="score" class="hint">Score 0</span></div>
+  </main>
+  <script type="module">
+    import { fitCanvas, hue } from './app.js';
+    const N = 20, S = Math.min(360, innerWidth - 32), cell = S / N;
+    const c = document.getElementById('c'), ctx = fitCanvas(c, S, S);
+    let snake, dir, next, food, timer, score;
+    const place = () => { do food = [Math.floor(Math.random() * N), Math.floor(Math.random() * N)]; while (snake.some(([x, y]) => x === food[0] && y === food[1])); };
+    function reset() { snake = [[10, 10], [9, 10], [8, 10]]; dir = next = [1, 0]; score = 0; place(); }
+    function draw() {
+      ctx.clearRect(0, 0, S, S);
+      ctx.fillStyle = 'hsl(' + (hue + 120) + ' 90% 60%)'; ctx.beginPath(); ctx.arc((food[0] + .5) * cell, (food[1] + .5) * cell, cell / 2.4, 0, 7); ctx.fill();
+      snake.forEach(([x, y], i) => { ctx.fillStyle = 'hsl(' + hue + ' 80% ' + (65 - i) + '%)'; ctx.fillRect(x * cell + 1, y * cell + 1, cell - 2, cell - 2); });
+    }
+    function step() {
+      dir = next;
+      const head = [(snake[0][0] + dir[0] + N) % N, (snake[0][1] + dir[1] + N) % N];
+      if (snake.some(([x, y]) => x === head[0] && y === head[1])) { clearInterval(timer); timer = null; document.getElementById('go').textContent = 'Again'; return; }
+      snake.unshift(head);
+      if (head[0] === food[0] && head[1] === food[1]) { score++; place(); } else snake.pop();
+      document.getElementById('score').textContent = 'Score ' + score; draw();
+    }
+    const turn = (d) => { if (d[0] !== -dir[0] || d[1] !== -dir[1]) next = d; };
+    addEventListener('keydown', (e) => { const d = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key]; if (d) { e.preventDefault(); turn(d); } });
+    let t0; c.addEventListener('pointerdown', (e) => (t0 = [e.clientX, e.clientY]));
+    c.addEventListener('pointerup', (e) => { const dx = e.clientX - t0[0], dy = e.clientY - t0[1]; if (Math.abs(dx) + Math.abs(dy) > 20) turn(Math.abs(dx) > Math.abs(dy) ? [Math.sign(dx), 0] : [0, Math.sign(dy)]); });
+    document.getElementById('go').onclick = () => { reset(); clearInterval(timer); timer = setInterval(step, 110); };
+    reset(); draw();
+  </script>
+</body>
+</html>

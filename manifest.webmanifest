@@ -1,0 +1,31 @@
+{
+  "name": "XOXD",
+  "short_name": "XOXD",
+  "description": "Find music, video, images and small apps people made \u2014 playable where you find them, ranked by what other people kept watching.",
+  "start_url": "/demo/index.html",
+  "scope": "/demo/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/demo/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/demo/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/demo/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

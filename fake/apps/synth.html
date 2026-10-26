@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>Synth</title>
+  <link rel="stylesheet" href="app.css" />
+</head>
+<body>
+  <header><h1>Synth</h1><span>Tap keys or use A-K</span></header>
+  <main>
+    <div id="keys" class="row" style="gap:4px"></div>
+    <div class="row"><label class="hint">Wave <select id="wave"><option>sawtooth</option><option>square</option><option>triangle</option><option>sine</option></select></label><label class="hint">Cutoff <input id="cut" type="range" min="200" max="8000" value="2400" /></label></div>
+  </main>
+  <script type="module">
+    import { hue } from './app.js';
+    let ac, filter;
+    const audio = () => { if (!ac) { ac = new AudioContext(); filter = ac.createBiquadFilter(); filter.type = 'lowpass'; filter.connect(ac.destination); } filter.frequency.value = +document.getElementById('cut').value; return ac; };
+    const NOTES = ['C', 'D', 'E', 'F', 'G', 'A', 'B', 'C'], LETTERS = 'asdfghjk';
+    function play(i) {
+      const a = audio(), o = a.createOscillator(), g = a.createGain();
+      o.type = document.getElementById('wave').value; o.frequency.value = 261.63 * Math.pow(2, [0, 2, 4, 5, 7, 9, 11, 12][i] / 12);
+      g.gain.setValueAtTime(0.25, a.currentTime); g.gain.exponentialRampToValueAtTime(0.001, a.currentTime + 0.8);
+      o.connect(g).connect(filter); o.start(); o.stop(a.currentTime + 0.8);
+      const k = document.querySelectorAll('#keys button')[i]; k.style.background = 'hsl(' + hue + ' 85% 62%)'; setTimeout(() => (k.style.background = ''), 150);
+    }
+    NOTES.forEach((n, i) => { const b = document.createElement('button'); b.textContent = n; b.style.cssText = 'width:52px;height:150px;border-radius:12px;background:#f5f3ee;color:#111'; b.onpointerdown = () => play(i); document.getElementById('keys').appendChild(b); });
+    addEventListener('keydown', (e) => { const i = LETTERS.indexOf(e.key); if (i >= 0 && !e.repeat) play(i); });
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+/* Shared look of the playable toys behind every demo's "Try it". */
+:root { --hue: 200; --bg: hsl(var(--hue) 30% 10%); --fg: #f5f3ee; --muted: hsl(var(--hue) 15% 70%); --accent: hsl(var(--hue) 85% 62%); color-scheme: dark; }
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 16px/1.4 system-ui, sans-serif; }
+body { display: flex; flex-direction: column; align-items: center; gap: 14px; padding: 16px; }
+header { width: 100%; max-width: 720px; display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+h1 { margin: 0; font-size: 20px; }
+header span { color: var(--muted); font-size: 13px; }
+main { width: 100%; max-width: 720px; flex: 1; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+canvas { max-width: 100%; border-radius: 16px; background: hsl(var(--hue) 30% 6%); touch-action: none; }
+button, input, select { font: inherit; color: inherit; }
+button { padding: 10px 16px; border-radius: 999px; border: 1px solid hsl(var(--hue) 40% 40%); background: hsl(var(--hue) 40% 18%); cursor: pointer; }
+button:hover { background: hsl(var(--hue) 40% 24%); }
+button.primary { background: var(--accent); color: #111; border-color: transparent; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+.hint { color: var(--muted); font-size: 13px; text-align: center; }
