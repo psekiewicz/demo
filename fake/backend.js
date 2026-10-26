@@ -66,7 +66,10 @@ function replay(entries) {
     if (!index.has(table)) index.set(table, new Map((db[table] || []).map((r) => [keyOf(table, r), r])));
     return index.get(table);
   };
+  const builtIn = new Set(Object.values(ACCOUNTS).map((a) => a.id));
   for (const [op, table, key, row] of entries) {
+    // Older versions let an admin delete the built-in accounts; they come back.
+    if (op === 'del' && builtIn.has(key) && ['auth_users', 'profiles', 'account_ages'].includes(table)) continue;
     if (!db[table]) db[table] = [];
     const map = mapFor(table);
     const existing = map.get(key);
@@ -722,21 +725,29 @@ const RPC = {
 // The Edge Functions: admin actions do something; the rest only answer.
 function invokeFunction(name, body = {}) {
   if (name === 'admin-actions') {
-    requireAdmin();
+    // Anyone may delete their own account (settings); everything else is admin.
+    if (!(body.action === 'delete' && body.targetUserId === me())) requireAdmin();
     const user = rows('auth_users').find((u) => u.id === body.targetUserId);
     if (!user) throw new RpcError('No such user');
+    // The accounts the Demo button signs in as stay, whatever happens.
+    if (BUILT_IN.has(user.id) && body.action !== 'unban') {
+      throw new RpcError('This demo account can\'t be deleted or banned.');
+    }
     if (body.action === 'ban') {
       patchRow('auth_users', user, { banned_until: new Date(Date.now() + (body.durationHours || 24) * 3_600_000).toISOString() });
     } else if (body.action === 'unban') {
       patchRow('auth_users', user, { banned_until: null });
     } else if (body.action === 'delete') {
       deleteAccount(user.id);
+      if (user.id === me()) signOut();
     }
     return { ok: true };
   }
   if (name === 'parental-consent') return body.action === 'confirm' ? { status: 'confirmed' } : { ok: true };
   return { ok: true };
 }
+
+const BUILT_IN = new Set(Object.values(ACCOUNTS).map((a) => a.id));
 
 function deleteAccount(uid) {
   rows('projects').filter((p) => p.user_id === uid).forEach((p) => { removeRow('projects', p); afterDelete('projects', p); });
